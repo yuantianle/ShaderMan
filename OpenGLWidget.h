@@ -25,4 +25,18 @@ public:
 	void wheelEvent(QWheelEvent* event);
 	void mouseReleaseEvent(QMouseEvent* event);
 
+public slots:
+	void Relocate();
+	void IfDrag3D(bool b);
+
+	void SetLightX(int i);
+	void SetLightY(int i);
+	void SetLightZ(int i);
+	void SetCrackDepth(int i);
+	void SetCrackWidth(int i);
+	void SetAmbient(int i);
+	void SetDiffuse(int i);
+	void SetSpecular(int i);
+	void SetShininess(int i);
+	void SetRoughness(int i);
 };

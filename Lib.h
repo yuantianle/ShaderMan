@@ -33,3 +33,9 @@
 #include <QtGlobal>
 #include <QFileDialog>
 #include <QDebug>
+#include <QImage>
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+

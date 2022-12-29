@@ -13,9 +13,13 @@ OpenGLWidget::~OpenGLWidget()
 
 void OpenGLWidget::initializeGL()
 {
-	m_UIcontrol.m_f = QOpenGLContext::currentContext()->functions();   // represents a native OpenGL context, enabling OpenGL rendering on a QSurface.
-	m_UIcontrol.mf = QOpenGLContext::currentContext()->extraFunctions();
-	m_UIcontrol.InitializeEnable();
+	m_UIcontrol.m_Shader.m_f = QOpenGLContext::currentContext()->functions();   // represents a native OpenGL context, enabling OpenGL rendering on a QSurface.
+	m_UIcontrol.m_Shader.mf = QOpenGLContext::currentContext()->extraFunctions();
+	m_UIcontrol.m_Shader.InitializeEnable();
+	m_UIcontrol.m_Shader.AddNewProgram("./Shaders/BlackBody.vert","./Shaders/BlackBody.frag");
+	m_UIcontrol.m_Shader.m_square_quad.LoadData();
+	m_UIcontrol.m_Shader.BindVAO_quad();
+	m_UIcontrol.UpdateTexture();
 }
 
 void OpenGLWidget::resizeGL(int w, int h)
@@ -23,13 +27,13 @@ void OpenGLWidget::resizeGL(int w, int h)
 	glViewport(0, 0, w, h);
 
 	m_UIcontrol.m_Proj.setToIdentity();
-	m_UIcontrol.m_Proj.perspective(45.0f, GLfloat(w) / h, 0.01f, 100.0f);
-	//m_UIcontrol.m_Proj.ortho(-10.5f, 10.5f, -10.5f, 10.5f, 0.01f, 100.0f);
+	//m_UIcontrol.m_Proj.perspective(45.0f, GLfloat(w) / h, 0.1f, 50.0f);
+	m_UIcontrol.m_Proj.ortho( -1.0f, 1.0f, -1.0f, 1.0f, -5.0f, 5.0f);
 }
 
 void OpenGLWidget::paintGL()
 {
-
+	m_UIcontrol.Draw();
 }
 
 void OpenGLWidget::mousePressEvent(QMouseEvent* event)
@@ -40,8 +44,6 @@ void OpenGLWidget::mousePressEvent(QMouseEvent* event)
 		m_UIcontrol.m_CursorX = event->x();
 		m_UIcontrol.m_CursorY = event->y();
 	}
-
-	
 }
 
 glm::vec3 OpenGLWidget::get_arcball_vector(double x, double y, int width, int height)
@@ -62,7 +64,7 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
 {
 	if (event->buttons() & Qt::LeftButton)
 	{
-		if (m_UIcontrol.m_ifDrag3D)
+		if (m_UIcontrol.m_ifDrag3D == false)
 		{
 			m_UIcontrol.m_Cursor.setShape(Qt::ClosedHandCursor);
 			QMatrix4x4 modelUse = m_UIcontrol.m_MouseRotate;
@@ -90,12 +92,13 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
 			m_UIcontrol.m_Cursor.setShape(Qt::ClosedHandCursor);
 			setCursor(m_UIcontrol.m_Cursor);
 
-			float dragspeed = (1 / m_UIcontrol.m_ZoomFactor) * 7;
+			float dragspeed = (1 / m_UIcontrol.m_ZoomFactor);
 
 			float moveX = (event->x() - m_UIcontrol.m_CursorX) / (float)this->width() * dragspeed;
 			float moveY = (event->y() - m_UIcontrol.m_CursorY) / (float)this->height() * dragspeed;
 
-			//m_LayerContainer[m_Target]->GetMesh(m_TargetChildren)->Control(moveX, -moveY);
+			m_UIcontrol.m_X += moveX; 
+			m_UIcontrol.m_Y += - moveY;
 
 			m_UIcontrol.m_CursorX = event->x();
 			m_UIcontrol.m_CursorY = event->y();
@@ -106,12 +109,12 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent* event)
 
 }
 
-void OpenGLWidget::wheelEvent(QWheelEvent* event)  //NEED TO CHANGED BACK!!!
+void OpenGLWidget::wheelEvent(QWheelEvent* event)  
 {
 
 	int numDegrees = event->delta() / 8;
-	int numSteps = numDegrees / 2;//15; // see QWheelEvent documentation
-	m_UIcontrol.m_ZoomFactor += (float)numSteps / 100.0f;
+	int numSteps = numDegrees / 15; // see QWheelEvent documentation
+	m_UIcontrol.m_ZoomFactor += (float)numSteps / 50.0f;
 	update();
 
 }
@@ -121,4 +124,76 @@ void OpenGLWidget::mouseReleaseEvent(QMouseEvent* event)
 	//Set the cursor shape
 	m_UIcontrol.m_Cursor.setShape(Qt::ArrowCursor);
 	setCursor(m_UIcontrol.m_Cursor);
+}
+
+
+void OpenGLWidget::IfDrag3D(bool b)
+{
+	m_UIcontrol.m_ifDrag3D = b;
+	update();
+}
+
+void OpenGLWidget::Relocate()
+{
+	m_UIcontrol.ResetMatrix();
+
+	//emit XRotationChanged(0);
+	//emit YRotationChanged(0);
+	//emit ZRotationChanged(0);
+
+
+	update();
+}
+
+void OpenGLWidget::SetLightX(int i)
+{
+	m_UIcontrol.m_LightX = i;
+	update();
+}
+void OpenGLWidget::SetLightY(int i)
+{
+	m_UIcontrol.m_LightY = i;
+	update();
+}
+void OpenGLWidget::SetLightZ(int i)
+{
+	m_UIcontrol.m_LightZ = i;
+	update();
+}
+void OpenGLWidget::SetCrackDepth(int i)
+{
+	m_UIcontrol.m_CrackDepth = i;
+	m_UIcontrol.UpdateTexture();
+	update();
+}
+void OpenGLWidget::SetCrackWidth(int i)
+{
+	m_UIcontrol.m_CrackWidth = i;
+	m_UIcontrol.UpdateTexture();
+	update();
+}
+void OpenGLWidget::SetAmbient(int i)
+{
+	m_UIcontrol.m_Light_Ambient = i;
+	update();
+}
+void OpenGLWidget::SetDiffuse(int i)
+{
+	m_UIcontrol.m_Light_Diffusion = i;
+	update();
+}
+void OpenGLWidget::SetSpecular(int i)
+{
+	m_UIcontrol.m_Light_Specular = i;
+	update();
+}
+void OpenGLWidget::SetShininess(int i)
+{
+	m_UIcontrol.m_Light_Shininess = i;
+	update();
+}
+void OpenGLWidget::SetRoughness(int i)
+{
+	m_UIcontrol.m_Light_Roughness = i;
+	update();
 }
